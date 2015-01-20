@@ -1,0 +1,317 @@
+<html>
+<head>
+    <style>
+        *{
+            padding: 0px;
+            margin: 0px;
+        }
+
+        .snakeGame{
+            width: 1200px;
+            height: 400px;
+            margin: 20px auto;
+            padding: 1px;
+        }
+
+        .snakeGame .cube{
+            width: 38px;
+            height: 38px;
+            margin: 1px;
+            float: left;
+            background-color: #a9a9a9;
+
+            text-align: center;
+            line-height: 38px;
+            color: white;
+
+            -webkit-transition: all 0.1s;
+        }
+    </style>
+</head>
+<body>
+<section class="snakeGame">
+
+</section>
+</body>
+<script>
+
+var $ = function( obj ){
+    return document.querySelector( obj );
+};
+
+var $n = function( obj ){
+    return [].slice.call(document.querySelectorAll( obj ));
+};
+
+for(var i = 0; i<300; i++){
+    $('.snakeGame').innerHTML += '<div class="cube" data-tag="'+i+'"></div>';
+}
+
+var cube = function( size ){
+    var _ = this;
+
+    var size = size || {
+                MAX_X: 0,
+                MAX_Y: 0
+            };
+
+    var o = {
+        NodeNumber: size.MAX_X * size.MAX_Y
+    };
+
+    _.getPoint = function( tag ){
+        var tag = parseInt( tag );
+
+        if( tag >= o.NodeNumber )
+            return false;
+
+        var x = parseInt( tag % size.MAX_X ),
+                y = parseInt( tag / size.MAX_X );
+
+        var point = {
+            x: x,
+            y: y
+        };
+        return point;
+    };
+    _.AroundPosition = function( tag ){
+        var tag = parseInt( tag );
+
+        if( tag >= o.NodeNumber )
+            return false;
+
+        var point = _.getPoint( tag),
+                x = point.x,
+                y = point.y,
+                lenghtX = size.MAX_X,
+                lenghtY = size.MAX_Y,
+                maxX = lenghtX - 1,
+                maxY = lenghtY - 1;
+
+        var leftTopPosition = tag - lenghtX -1,
+                topPosition = tag - lenghtX,
+                rightTopPosition = tag - lenghtX + 1,
+                rightPosition = tag + 1,
+                rightBottomPosition = tag + lenghtX + 1,
+                bottomPosition = tag + lenghtX,
+                leftBottomPosition = tag + lenghtX - 1,
+                leftPosition = tag - 1;
+
+        switch (x){
+            case 0:
+                leftPosition = null;
+                leftTopPosition = null;
+                leftBottomPosition = null;
+                break;
+            case maxX:
+                rightPosition = null;
+                rightTopPosition = null;
+                rightBottomPosition = null;
+                break;
+            default:
+                break;
+        }
+
+        switch (y){
+            case 0:
+                topPosition = null;
+                rightTopPosition = null;
+                leftTopPosition = null;
+                break;
+            case maxY:
+                bottomPosition = null;
+                rightBottomPosition = null;
+                leftBottomPosition = null;
+                break;
+            default:
+                break;
+        }
+
+        var aroundPostion ={
+            leftTopPostion: leftTopPosition,
+            topPosition: topPosition,
+            rightTopPosition: rightTopPosition,
+            rightPosition: rightPosition,
+            rightBottomPosition: rightBottomPosition,
+            bottomPosition: bottomPosition,
+            leftBottomPosition: leftBottomPosition,
+            leftPosition: leftPosition
+        }
+
+        return aroundPostion;
+    }
+};
+
+var snakeBoard = new cube({
+    MAX_X: 30,
+    MAX_Y: 10
+});
+
+var enmu = {
+    snakeMoveDirection: {
+        top: 0,
+        right: 1,
+        down: 2,
+        left: 3
+    },
+    CTSnakeAndCube: {
+        snakeTCUbe: 0,
+        cubeTSnake: 1
+    }
+};
+
+var game = {
+    snake: [],
+    food: -1,
+    gameStart: function(){
+        this.snakeInit();
+        this.foodInit();
+        this.newfood();
+    },
+    newfood: function(){
+
+        var p = parseInt( Math.random() * 300 );
+        if( this.snake.indexOf( p ) === -1 ){
+            this.food = p;
+            console.log('p2:'+this.food);
+            document.getElementsByClassName('cube')[p].style.backgroundColor = 'orangered';
+        }else{
+            this.newfood();
+        }
+
+    },
+    snakeInit: function(){
+        var s = parseInt( Math.random() * 150);
+
+        document.getElementsByClassName('cube')[s].style.backgroundColor = 'orangered';
+        this.snake.push( s );
+    },
+    foodInit: function(){
+
+    },
+    snakeAddNode: function( node ){
+        this.snake.push( node );
+
+        var snake = this.snake,
+                l = snake.length;
+
+        for(var i = 0; i<l; i++){
+            this.CTsnakeAndCube( snake[i], enmu.CTSnakeAndCube.cubeTSnake );
+        }
+    },
+    CTsnakeAndCube: function( tag, CT ){
+        var cube = document.getElementsByClassName('cube');
+
+        if( CT === enmu.CTSnakeAndCube.cubeTSnake ){
+            cube[tag].style.backgroundColor = 'orangered';
+        }else if( CT === enmu.CTSnakeAndCube.snakeTCUbe ){
+            cube[tag].style.backgroundColor = '#a9a9a9';
+        }
+    },
+    Move: function( from, to ){
+
+        if( from.length !== to.length )
+            return false;
+
+        for( var i= 0, l = from.length; i<l; i++ ){
+            if( from[i] !== to[i] ){
+                this.CTsnakeAndCube( from[i], enmu.CTSnakeAndCube.snakeTCUbe );
+                this.CTsnakeAndCube( to[i], enmu.CTSnakeAndCube.cubeTSnake );
+            }
+        }
+
+        this.snake = to.slice();
+
+    },
+    snakeMove: function( direction ){
+
+        var snake = this.snake,
+                food = this.food,
+                snakeHead = snake[0],
+                snakeLenght = snake.length,
+                ap = snakeBoard.AroundPosition( snakeHead ),
+                from = snake.slice(),
+                to = [],
+                lastTag = snake[snakeLenght - 1];
+
+        if( direction === enmu.snakeMoveDirection.top ){
+            var t = ap.topPosition;
+            if( t !== null ){
+                snakeHead = t;
+            }
+        }else if( direction === enmu.snakeMoveDirection.right ){
+            var r = ap.rightPosition;
+            if( r !== null ){
+                snakeHead = r;
+            }
+        }else if( direction === enmu.snakeMoveDirection.down ){
+            var d = ap.bottomPosition;
+            if( d !== null ){
+                snakeHead = d;
+            }
+        }else if( direction === enmu.snakeMoveDirection.left ){
+            var l = ap.leftPosition;
+            if( l !== null ){
+                snakeHead = l;
+            }
+        }
+
+        if( snakeHead === snake[0] ){
+            this.gameOver();
+            return false;
+        }
+
+        if( snake.indexOf( snakeHead ) !== -1 ){
+            this.gameOver();
+            return false;
+        }
+
+        if( snakeLenght > 1 ){
+            for(var i=1; i<snakeLenght; i++ ){
+                to[i] = from[i - 1];
+            }
+        }
+
+        this.snake[0] = to[0] = snakeHead;
+        this.Move( from, to );
+
+        if( snakeHead === food ){
+            this.snakeAddNode( lastTag );
+            this.newfood();
+        }
+
+    },
+    gameOver: function(){
+        alert('gameOver');
+        this.snake.length = 0;
+        this.food = -1;
+        $n('.cube').forEach(function(cube, i){
+            cube.style.backgroundColor = '#a9a9a9';
+        });
+        game.gameStart();
+    },
+    gameWin: function(){
+
+    }
+};
+
+game.gameStart();
+
+</script>
+<script>
+    (function(){
+        document.onkeydown = function(e){
+            var KC = e.keyCode;
+            if( KC === 37 ){
+                game.snakeMove( enmu.snakeMoveDirection.left );
+            }else if( KC === 38 ){
+                game.snakeMove( enmu.snakeMoveDirection.top );
+            }else if( KC === 39 ){
+                game.snakeMove( enmu.snakeMoveDirection.right );
+            }else if( KC === 40 ){
+                game.snakeMove( enmu.snakeMoveDirection.down );
+            }
+        }
+    })();
+</script>
+</html>
